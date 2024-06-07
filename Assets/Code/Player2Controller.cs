@@ -7,6 +7,9 @@ public class Player2Controller : MonoBehaviour
     public float speed = 5f;
     public float jumpForce = 10f;
 
+    public float fireRate = 0.5f;
+    private float nextFireTime = 0f;
+
     public GameObject bulletPrefab;
     public Transform firePoint;
 
@@ -15,6 +18,7 @@ public class Player2Controller : MonoBehaviour
 
     private Rigidbody2D rb;
     private bool isGrounded;
+    private bool facingRight = true;
 
     // Start is called before the first frame update
     void Start()
@@ -41,6 +45,15 @@ public class Player2Controller : MonoBehaviour
             moveInput = -1;
 
         rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
+
+        if (moveInput > 0 && !facingRight)
+        {
+            Flip();
+        }
+        else if (moveInput < 0 && facingRight)
+        {
+            Flip();
+        }
     }
 
     private void Jump()
@@ -53,10 +66,17 @@ public class Player2Controller : MonoBehaviour
 
     private void Fire()
     {
-        if (Input.GetKeyDown(KeyCode.F))
+        if (Input.GetKeyDown(KeyCode.F) && Time.time > nextFireTime) // F key for fire
         {
             GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-            bullet.layer = LayerMask.NameToLayer("Bullet");
+            Bullet bulletScript = bullet.GetComponent<Bullet>();
+            if (bulletScript != null)
+            {
+                bulletScript.SetDirection(facingRight ? Vector2.right : Vector2.left);
+            }
+
+            Physics2D.IgnoreCollision(bullet.GetComponent<Collider2D>(), GetComponent<Collider2D>());
+            nextFireTime = Time.time + fireRate; // Update next fire time
         }
     }
 
@@ -66,6 +86,13 @@ public class Player2Controller : MonoBehaviour
         {
             isGrounded = true;
         }
+
+        Enemy enemy = collision.gameObject.GetComponent<Enemy>();
+        if (enemy != null)
+        {
+            enemy.TakeDamage(10);
+            TakeDamage(10);
+        }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
@@ -74,6 +101,16 @@ public class Player2Controller : MonoBehaviour
         {
             isGrounded = false;
         }
+
+
+    }
+
+    private void Flip()
+    {
+        facingRight = !facingRight;
+        Vector3 scaler = transform.localScale;
+        scaler.x *= -1;
+        transform.localScale = scaler;
     }
 
     public void TakeDamage(int damage)
@@ -81,7 +118,7 @@ public class Player2Controller : MonoBehaviour
         currentHealth -= damage;
         if (currentHealth <= 0)
         {
-            // Handle player death
+            Destroy(gameObject);
         }
     }
 }
