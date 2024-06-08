@@ -9,10 +9,10 @@ EditorBuildSettings:
     path: Assets/Scenes/StartScreen.unity
     guid: 2cda990e2423bbf4892e6590ba056729
   - enabled: 1
-    path: Assets/Scenes/PickChapter.unity
+    path: Assets/Scenes/PickChapterScene.unity
     guid: e366ecae9c3c69245af2edb40818d94f
   - enabled: 1
-    path: Assets/Scenes/PlayerMode.unity
+    path: Assets/Scenes/PlayerModeScene.unity
     guid: 83012250da544834bb3f6fb6a35ef3ef
   - enabled: 1
     path: Assets/Scenes/SinglePlayerScene.unity
