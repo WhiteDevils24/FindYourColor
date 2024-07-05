@@ -1,11 +1,16 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class SceneSetting : MonoBehaviour
 {
+    public SfxManager sfxManager;
+    public AudioClip buttonClickSFX;
+    public float delayBeforeSceneLoad = 0.5f; // Adjust the delay to match the length of your SFX
+
     public void StartGame()
     {
-        SceneManager.LoadScene("PickChapterScene");
+        StartCoroutine(PlaySFXAndChangeScene("PickChapterScene"));
     }
 
     public void ExitGame()
@@ -17,7 +22,7 @@ public class SceneSetting : MonoBehaviour
     public void SelectChapter(int chapterNumber)
     {
         PlayerPrefs.SetInt("SelectedChapter", chapterNumber);
-        SceneManager.LoadScene("ModeSelectionScene");
+        StartCoroutine(PlaySFXAndChangeScene("ModeSelectionScene"));
     }
 
     public void SinglePlayerMode()
@@ -37,7 +42,7 @@ public class SceneSetting : MonoBehaviour
         string sceneName = GetChapterSceneName();
         if (sceneName != null)
         {
-            SceneManager.LoadScene(sceneName);
+            StartCoroutine(PlaySFXAndChangeScene(sceneName));
         }
     }
 
@@ -72,5 +77,12 @@ public class SceneSetting : MonoBehaviour
             }
         }
         return false;
+    }
+
+    private IEnumerator PlaySFXAndChangeScene(string sceneName)
+    {
+        sfxManager.PlaySFX(buttonClickSFX);
+        yield return new WaitForSeconds(delayBeforeSceneLoad);
+        SceneManager.LoadScene(sceneName);
     }
 }
