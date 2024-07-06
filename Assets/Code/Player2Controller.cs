@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player2Controller : MonoBehaviour
 {
@@ -14,17 +15,29 @@ public class Player2Controller : MonoBehaviour
     public Transform firePoint;
 
     public int maxHealth = 100;
-    private int currentHealth;
+    public int currentHealth;
 
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool facingRight = true;
+
+    private bool isGameOver = false;
+
+    public Animator animator;
+
+    public float fallLimit = -10f;
 
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         currentHealth = maxHealth;
+        animator = GetComponent<Animator>();
+
+        if (animator == null)
+        {
+            Debug.LogError("Animator component not found!");
+        }
     }
 
     // Update is called once per frame
@@ -33,6 +46,8 @@ public class Player2Controller : MonoBehaviour
         Move();
         Jump();
         Fire();
+        CheckFall();
+        UpdateAnimation();
     }
 
     private void Move()
@@ -54,6 +69,8 @@ public class Player2Controller : MonoBehaviour
         {
             Flip();
         }
+
+        animator.SetBool("IsRunning", moveInput != 0);
     }
 
     private void Jump()
@@ -61,7 +78,14 @@ public class Player2Controller : MonoBehaviour
         if (isGrounded && Input.GetKeyDown(KeyCode.W))
         {
             rb.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
+            animator.SetTrigger("Jump");
+            isGrounded = false;
         }
+    }
+
+    private void UpdateAnimation()
+    {
+        animator.SetBool("IsGrounded", isGrounded); // Update grounded state
     }
 
     private void Fire()
@@ -77,14 +101,75 @@ public class Player2Controller : MonoBehaviour
 
             Physics2D.IgnoreCollision(bullet.GetComponent<Collider2D>(), GetComponent<Collider2D>());
             nextFireTime = Time.time + fireRate; // Update next fire time
+
+            animator.SetTrigger("Shoot");
+        }
+    }
+    private void CheckFall()
+    {
+        if (transform.position.y < fallLimit)
+        {
+            // Trigger game over
+            LoadGameOverScene();
         }
     }
 
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision == null)
+        {
+            Debug.LogWarning("Collision is null!");
+            return;
+        }
+
+        if (collision.gameObject == null)
+        {
+            Debug.LogWarning("Collision gameObject is null!");
+            return;
+        }
+
+        if (collision.gameObject.CompareTag("Platform"))
         {
             isGrounded = true;
+
+            if (animator != null)
+            {
+                animator.SetBool("IsGrounded", true);
+            }
+            else
+            {
+                Debug.LogWarning("Animator is null when trying to set 'isGrounded' to true.");
+            }
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision == null)
+        {
+            Debug.LogWarning("Collision is null!");
+            return;
+        }
+
+        if (collision.gameObject == null)
+        {
+            Debug.LogWarning("Collision gameObject is null!");
+            return;
+        }
+
+        if (collision.gameObject.CompareTag("Platform"))
+        {
+            isGrounded = false;
+
+            if (animator != null)
+            {
+                animator.SetBool("IsGrounded", false);
+            }
+            else
+            {
+                Debug.LogWarning("Animator is null when trying to set 'isGrounded' to false.");
+            }
         }
 
         Enemy enemy = collision.gameObject.GetComponent<Enemy>();
@@ -93,16 +178,6 @@ public class Player2Controller : MonoBehaviour
             enemy.TakeDamage(10);
             TakeDamage(10);
         }
-    }
-
-    private void OnCollisionExit2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-        {
-            isGrounded = false;
-        }
-
-
     }
 
     private void Flip()
@@ -119,6 +194,40 @@ public class Player2Controller : MonoBehaviour
         if (currentHealth <= 0)
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void DestroyPlayer()
+    {
+        if (!isGameOver)
+        {
+            isGameOver = true;
+            Debug.Log("Game Over!");
+            rb.velocity = Vector2.zero;
+            rb.isKinematic = true;
+
+            // Remove from CameraFollow before destroying
+            CameraFollow cameraFollow = FindObjectOfType<CameraFollow>();
+            if (cameraFollow != null)
+            {
+                cameraFollow.RemoveTarget(transform);
+            }
+
+            // Load the Game Over scene after a short delay
+            LoadGameOverScene();
+        }
+    }
+
+    private void LoadGameOverScene()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameOverScene");
+    }
+
+    private void OnDestroy()
+    {
+        if (!isGameOver)
+        {
+            DestroyPlayer();
         }
     }
 }

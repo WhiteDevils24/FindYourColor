@@ -9,8 +9,10 @@ public class Enemy : MonoBehaviour
     public GameObject enemyBulletPrefab;
     public Transform firePoint;
 
-    public Transform leftPoint; 
-    public Transform rightPoint; 
+    public Transform leftPoint;
+    public Transform rightPoint;
+
+    private bool facingRight = true;
 
     private float nextFireTime;
     private int currentHealth;
@@ -36,6 +38,7 @@ public class Enemy : MonoBehaviour
             if (Vector2.Distance(transform.position, rightPoint.position) < 0.1f)
             {
                 movingRight = false;
+                Flip(true);
             }
         }
         else
@@ -44,7 +47,19 @@ public class Enemy : MonoBehaviour
             if (Vector2.Distance(transform.position, leftPoint.position) < 0.1f)
             {
                 movingRight = true;
+                Flip(false);
             }
+        }
+    }
+
+    private void Flip(bool facingRight)
+    {
+        if (this.facingRight != facingRight)
+        {
+            this.facingRight = facingRight;
+            Vector3 scaler = transform.localScale;
+            scaler.x *= -1;
+            transform.localScale = scaler;
         }
     }
 
@@ -57,7 +72,7 @@ public class Enemy : MonoBehaviour
             if (bulletScript != null)
             {
                 bulletScript.isEnemyBullet = true;
-                bulletScript.SetDirection(movingRight ? Vector2.right : Vector2.left); // Fire based on movement direction
+                bulletScript.SetDirection(facingRight ? Vector2.right : Vector2.left); // Fire based on facing direction
             }
             nextFireTime = Time.time + fireRate;
         }
